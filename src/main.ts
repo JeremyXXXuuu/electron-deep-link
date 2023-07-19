@@ -1,23 +1,61 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import * as path from "path";
+import { login, tokenFlow } from "./auth";
 
-function createWindow() {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    height: 600,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-    },
-    width: 800,
-  });
 
-  // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, "../index.html"));
+function deepLinking() {
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient('com.example.app', process.execPath, [path.resolve(process.argv[1])])
+    }
+  } else {
+    app.setAsDefaultProtocolClient('com.example.app')
+  }
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  const gotTheLock = app.requestSingleInstanceLock()
+  let redirectUri
+  if (!gotTheLock) {
+    app.quit()
+  } else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+      // Someone tried to run a second instance, we should focus our window.
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore()
+        mainWindow.focus()
+      }
+      redirectUri = commandLine.pop()
+      // dialog.showErrorBox('Welcome Back windows', `You arrived from: ${commandLine.pop().slice(0, -1)}`)
+      console.log(redirectUri)
+
+      tokenFlow(redirectUri)
+    })
+  
+    app.on('open-url', (event, url) => {
+      // dialog.showErrorBox('Welcome Back mac/linux', `You arrived from: ${url}`)
+      redirectUri = url
+      console.log(redirectUri)
+    })
+  }
 }
 
+deepLinking();
+
+let mainWindow: BrowserWindow | null = null;
+
+function createWindow () {
+
+  // Create the browser window.
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  })
+
+  mainWindow.loadFile('../index.html')
+  mainWindow.webContents.openDevTools()
+}
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -42,3 +80,15 @@ app.on("window-all-closed", () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+// Handle window controls via IPC
+ipcMain.on("login", () => {
+  console.log('shell:open')
+  login();
+});
+
+ipcMain.on("test", (event, args) => {
+  console.log('test')
+  console.log(args)
+  shell.openExternal(args[0])
+} )
