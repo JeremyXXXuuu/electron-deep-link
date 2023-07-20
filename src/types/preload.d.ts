@@ -9,6 +9,7 @@ declare global {
         once(channel: string, func: (...args: unknown[]) => void): void;
       };
       login():void;
+      logout():void;
     };
   }
 }

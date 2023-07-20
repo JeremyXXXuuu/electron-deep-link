@@ -6,8 +6,12 @@
 // needed in the renderer process.
 
  
-const openIn =document.getElementById('open-in-browser');
-console.log(openIn);
-openIn.addEventListener('click',()=>{
+const login =document.getElementById('log-in');
+login.addEventListener('click',()=>{
     window.electron.login();
+})
+
+const logout =document.getElementById('log-out');
+logout.addEventListener('click',()=>{
+    window.electron.logout();
 })

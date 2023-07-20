@@ -1,49 +1,24 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import * as path from "path";
-import { login, tokenFlow } from "./auth";
+import { login, tokenFlow } from "./auth/auth";
 
+import { DeepLinkAuthClient } from '@orosound/auth_client_sdk_nodejs'
+import persistToken 		      from './auth/persistToken';
 
-function deepLinking() {
-  if (process.defaultApp) {
-    if (process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient('com.example.app', process.execPath, [path.resolve(process.argv[1])])
-    }
-  } else {
-    app.setAsDefaultProtocolClient('com.example.app')
-  }
-
-  const gotTheLock = app.requestSingleInstanceLock()
-  let redirectUri
-  if (!gotTheLock) {
-    app.quit()
-  } else {
-    app.on('second-instance', (event, commandLine, workingDirectory) => {
-      // Someone tried to run a second instance, we should focus our window.
-      if (mainWindow) {
-        if (mainWindow.isMinimized()) mainWindow.restore()
-        mainWindow.focus()
-      }
-      redirectUri = commandLine.pop()
-      // dialog.showErrorBox('Welcome Back windows', `You arrived from: ${commandLine.pop().slice(0, -1)}`)
-      console.log(redirectUri)
-
-      tokenFlow(redirectUri)
-    })
-  
-    app.on('open-url', (event, url) => {
-      // dialog.showErrorBox('Welcome Back mac/linux', `You arrived from: ${url}`)
-      redirectUri = url
-      console.log(redirectUri)
-    })
-  }
-}
-
-deepLinking();
+const oro_provider = {
+  name: "orosound",
+  openIdConnectUrl: "http://localhost:8001",
+  clientId: "foo",
+  redirectUri: "com.example.app://auth/callback",
+  scope: "openid name profile email offline_access",
+  responseType: "code",
+  extras: { prompt: "consent", access_type: "offline" },
+};
 
 let mainWindow: BrowserWindow | null = null;
+const auth_client = new DeepLinkAuthClient(oro_provider, persistToken, mainWindow);
 
 function createWindow () {
-
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
@@ -59,15 +34,24 @@ function createWindow () {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  createWindow();
 
-  app.on("activate", function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.whenReady().then(() => {
+    auth_client.init();
+    createWindow();
+    console.log(persistToken.getCredentials())
+    app.on("activate", function () {
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
   });
-});
+}
+
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -83,8 +67,10 @@ app.on("window-all-closed", () => {
 
 // Handle window controls via IPC
 ipcMain.on("login", () => {
-  console.log('shell:open')
-  login();
+  auth_client.init();
+});
+ipcMain.on("logout", () => {
+  auth_client.signOut();
 });
 
 ipcMain.on("test", (event, args) => {
