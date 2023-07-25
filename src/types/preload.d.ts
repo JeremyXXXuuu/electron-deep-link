@@ -10,6 +10,7 @@ declare global {
       };
       login():void;
       logout():void;
+      userInfo():void;
     };
   }
 }

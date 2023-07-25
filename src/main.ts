@@ -1,6 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, ipcRenderer, shell } from "electron";
 import * as path from "path";
-import { login, tokenFlow } from "./auth/auth";
 
 import { DeepLinkAuthClient } from '@orosound/auth_client_sdk_nodejs'
 import persistToken 		      from './auth/persistToken';
@@ -16,7 +15,7 @@ const oro_provider = {
 };
 
 let mainWindow: BrowserWindow | null = null;
-const auth_client = new DeepLinkAuthClient(oro_provider, persistToken, mainWindow);
+const auth_client = new DeepLinkAuthClient(oro_provider, persistToken, mainWindow, 'com.example.app');
 
 function createWindow () {
   // Create the browser window.
@@ -72,9 +71,15 @@ ipcMain.on("login", () => {
 ipcMain.on("logout", () => {
   auth_client.signOut();
 });
+ipcMain.on("userInfo", () => {
+  auth_client.fetchUserInfo().then((user_info) => {
+    console.log(user_info);
+    mainWindow.webContents.send("userInfo", user_info);
+  });
+});
 
 ipcMain.on("test", (event, args) => {
   console.log('test')
   console.log(args)
   shell.openExternal(args[0])
-} )
+})

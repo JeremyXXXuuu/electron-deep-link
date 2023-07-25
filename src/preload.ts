@@ -22,12 +22,13 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
   login: () => ipcRenderer.send("login"),
-  logout: () => ipcRenderer.send("logout")
+  logout: () => ipcRenderer.send("logout"),
+  userInfo: () => ipcRenderer.send("userInfo")
 });
 
 
 
-export type Channels = 'login'|'logout';
+export type Channels = 'login'|'logout'|'userInfo';
 
 // All of the Node.js APIs are available in the preload process.
 // It has the same sandbox as a Chrome extension.
