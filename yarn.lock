@@ -513,10 +513,10 @@ electron-store@^8.1.0:
     conf "^10.2.0"
     type-fest "^2.17.0"
 
-electron@^24.3.0:
-  version "24.6.3"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-24.6.3.tgz#fc41279a5ec7b0aa3d48128df61fa29ca8a21199"
-  integrity sha512-hWy2ot0987DRzhOxIyv9tgybd0yrAcc9MRFYZ+znjXgdmbvcSveXdcGKGdtpgw1EW/TKUonJMH3VfDNeAmdPUg==
+electron@^27.0.1:
+  version "27.0.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-27.0.1.tgz#809bbe5363f414224789cfa1f3d7237906f71b9e"
+  integrity sha512-AjDGgpf2thNxVXoNqEG+0GCUK4upAEa2B+IoM5Yk9YrOLd6uUOEMfGI9rhPtj+jC14iKOvBdefY2uAzcDC0qng==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^18.11.18"
